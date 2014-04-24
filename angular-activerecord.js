@@ -332,12 +332,12 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 										if (typeof sprintf !== "undefined") {
 											errorMessage = sprintf(errorMessage, {fieldName: mthis.$fieldTranslations[fieldName] || fieldName, fieldValue: prop, validationValue: value});
 										}
-									} else {
+									} else if (functionName === "notEmpty") {
 										keepGoing = false;
 									}
 								}
 							});
-							if (keepGoing) errors.push(errorMessage);
+							if (keepGoing && errorMessage) errors.push(errorMessage);
 						}
 					});
 				} else if (this.$validations[fieldName].required) {
