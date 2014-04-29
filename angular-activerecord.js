@@ -267,6 +267,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 				if (angular.isObject(data)) {
 					applyFilters(_result(model, '$readFilters'), data);
 					model.$computeData(data);
+					model.$validate();
 					data = angular.copy(model);
 					model.$previousAttributes = function () {
 						return data;
@@ -809,6 +810,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					applyFilters(filters, item);
 					var newModel = new ModelType();
 					newModel.$computeData(item);
+					newModel.$validate();
 					models.push(newModel);
 				});
 				deferred.resolve(models);
