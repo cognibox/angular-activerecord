@@ -814,6 +814,17 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					models.push(newModel);
 				});
 				deferred.resolve(models);
+			} else if(data && data.meta && ( data.meta.count || data.meta.count == 0) && !isNaN(data.meta.count) && data.data && angular.isArray(data.data)) {
+			  // This code has been added to allow for paginated results with a total count
+			  var models = [];
+			  var filters = ModelType.prototype.$readFilters;
+			  angular.forEach(data.data, function (item) {
+			    applyFilters(filters, item);
+			    var newModel = new ModelType();
+			    newModel.$computeData(item);
+			    models.push(newModel);
+			  });
+			  deferred.resolve({count: data.meta.count, models: models});
 			} else {
 				deferred.reject('Not a valid response, expecting an array');
 			}
