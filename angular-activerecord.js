@@ -549,6 +549,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 				if (angular.isObject(data)) {
 					applyFilters(_result(model, '$readFilters'), data);
 					angular.extend(model, data);
+					data = angular.copy(model);
 					model.$previousAttributes = function () {
 						return data;
 					};
