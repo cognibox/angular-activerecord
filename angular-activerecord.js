@@ -335,11 +335,9 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					var props = typeof mthis[fieldName] == "object" ? mthis[fieldName] : [mthis[fieldName]];
 					var notEmptyValidation = false;
 					if (mthis.$validations[fieldName].notEmpty) {
-						if (mthis.$validations[fieldName].notEmpty !== true && mthis.$validations[fieldName].notNull) {
+						if (mthis.$validations[fieldName].notEmpty !== true) {
 							notEmptyValidation = mthis.$validations[fieldName].notEmpty;
-						} else if (mthis.$validations[fieldName].notEmpty) {
-							notEmptyValidation = mthis.$emptyValues();
-						} else if (mthis.$validations[fieldName].notNull) {
+						} else {
 							notEmptyValidation = mthis.$emptyValues();
 						}
 					}
@@ -350,7 +348,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 							errors = mthis.$applyValidation(fieldName, prop, errors);
 						}
 					});
-					if (emptyError) {
+					if (emptyError && this.$validations[fieldName].notEmpty) {
 						errors.push(mthis.$getErrorMessage(fieldName, "notEmpty"));
 					}
 				} else if (this.$validations[fieldName].required) {
