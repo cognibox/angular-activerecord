@@ -453,6 +453,13 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			angular.forEach(this.$associations, function(assocObj, assocKey) {
 				var Related = $injector.get(assocObj.options.through || assocKey);
 				var keyName = Related.prototype.$plural || Related.prototype.$name || assocObj.options.through;
+				var parentManaged = !!assocObj.options.parentManaged;
+				
+				if(parentManaged){
+				  // Modifications will be sent as a delta of the parent object and managed directly. No need to make any other calls
+				  return;
+				}
+
 				keyName = _lcfirst(keyName);
 				var assocs = model[keyName];
 				if (assocs && assocObj.type == "hasMany") {
@@ -741,10 +748,13 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			var mthis = this;
 			var Related = $injector.get(options.through || entity);
 			var isThrough = !!options.through;
+			var parentManaged = !!options.parentManaged;
 			var relatedName = _lcfirst(Related.prototype.$plural || Related.prototype.$name || options.through);
+
 			this.prototype.$associations[entity] = {type: "hasMany", options: options};
+
 			this.prototype["add" + entity] = function(model, relatedData) {
-				if (model.$isNew()) return "can't be new";
+				if (!parentManaged && model.$isNew()) return "can't be new";
 				var options = this.$associations[entity].options;
 				if (!relatedData) relatedData = {};
 				var newEntity = null;
@@ -758,6 +768,48 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 				this[relatedName].push(newEntity);
 				return this;
 			};
+
+			this.prototype["remove" + entity] = function(model, relatedData) {
+				var options = this.$associations[entity].options;
+				if (!relatedData) relatedData = {};
+				var oldEntity = null;
+				if (isThrough) {
+					oldEntity = new Related(relatedData);
+					oldEntity["remove" + entity](model);
+				} else {
+					oldEntity = model;
+				}
+				if (!this[relatedName]) this[relatedName] = [];
+				if (!this[relatedName + "ToRemove"]) this[relatedName + "ToRemove"] = [];
+
+				var index = this[relatedName].indexOf(oldEntity); // Try for the easy match
+
+				if(index == -1 && oldEntity.id){
+					// Try to find by id
+					for(var i = 0; i < this[relatedName].length; i ++){
+						if(this[relatedName].id && this[relatedName].id == oldEntity.id){
+							index = i;
+							break;
+						}
+					}
+				}
+				if(index == -1 && oldEntity.$id){
+					// Try to find by $id, last chance
+					for(var i = 0; i < this[relatedName].length; i ++){
+						if(this[relatedName].$id && this[relatedName].$id == oldEntity.$id){
+							index = i;
+							break;
+						}
+					}
+				}
+
+				if(index == -1){
+					return "model not found";
+				}
+
+				this[relatedName + "ToRemove"].push(this[relatedName].splice(index, 1)[0]);
+				return this;
+			}
 		}
 	};
 
