@@ -308,7 +308,14 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			var errorMessage = this.$validationErrorMessages[functionName] || "is invalid";
 			if (angular.isFunction(errorMessage)) errorMessage = errorMessage(fieldName, fieldValue, validationValue);
 			if (typeof sprintf !== "undefined") {
-				errorMessage = sprintf(errorMessage, {fieldName: this.$fieldTranslations[fieldName] || fieldName, fieldValue: fieldValue, validationValue: validationValue});
+				if(!errorMessage.errorMessage){
+					errorMessage = sprintf(errorMessage, {fieldName: this.$fieldTranslations[fieldName] || fieldName, fieldValue: fieldValue, validationValue: validationValue});
+				} else {
+					errorMessage.fieldName = this.$fieldTranslations[fieldName] || fieldName;
+					errorMessage.fieldValue = fieldValue;
+					errorMessage.validationValue = validationValue;
+					errorMessage = sprintf(errorMessage.errorMessage, errorMessage);
+				}
 			}
 			return errorMessage;
 		},
