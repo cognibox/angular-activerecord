@@ -308,7 +308,14 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			var errorMessage = this.$validationErrorMessages[functionName] || "is invalid";
 			if (angular.isFunction(errorMessage)) errorMessage = errorMessage(fieldName, fieldValue, validationValue);
 			if (typeof sprintf !== "undefined") {
-				errorMessage = sprintf(errorMessage, {fieldName: this.$fieldTranslations[fieldName] || fieldName, fieldValue: fieldValue, validationValue: validationValue});
+				if(!errorMessage.errorMessage){
+					errorMessage = sprintf(errorMessage, {fieldName: this.$fieldTranslations[fieldName] || fieldName, fieldValue: fieldValue, validationValue: validationValue});
+				} else {
+					errorMessage.fieldName = this.$fieldTranslations[fieldName] || fieldName;
+					errorMessage.fieldValue = fieldValue;
+					errorMessage.validationValue = validationValue;
+					errorMessage = sprintf(errorMessage.errorMessage, errorMessage);
+				}
 			}
 			return errorMessage;
 		},
@@ -335,11 +342,9 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					var props = typeof mthis[fieldName] == "object" ? mthis[fieldName] : [mthis[fieldName]];
 					var notEmptyValidation = false;
 					if (mthis.$validations[fieldName].notEmpty) {
-						if (mthis.$validations[fieldName].notEmpty !== true && mthis.$validations[fieldName].notNull) {
+						if (mthis.$validations[fieldName].notEmpty !== true) {
 							notEmptyValidation = mthis.$validations[fieldName].notEmpty;
-						} else if (mthis.$validations[fieldName].notEmpty) {
-							notEmptyValidation = mthis.$emptyValues();
-						} else if (mthis.$validations[fieldName].notNull) {
+						} else {
 							notEmptyValidation = mthis.$emptyValues();
 						}
 					}
@@ -350,7 +355,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 							errors = mthis.$applyValidation(fieldName, prop, errors);
 						}
 					});
-					if (emptyError) {
+					if (emptyError && this.$validations[fieldName].notEmpty) {
 						errors.push(mthis.$getErrorMessage(fieldName, "notEmpty"));
 					}
 				} else if (this.$validations[fieldName].required) {
