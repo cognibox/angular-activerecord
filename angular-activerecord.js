@@ -786,27 +786,20 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 				}
 				if (!this[relatedName]) this[relatedName] = [];
 				if (!this[relatedName + "ToRemove"]) this[relatedName + "ToRemove"] = [];
-
-				var index = this[relatedName].indexOf(oldEntity); // Try for the easy match
-
-				if(index == -1 && oldEntity.id){
-					// Try to find by id
-					for(var i = 0; i < this[relatedName].length; i ++){
-						if(this[relatedName].id && this[relatedName].id == oldEntity.id){
-							index = i;
-							break;
-						}
-					}
-				}
-				if(index == -1 && oldEntity.$id){
-					// Try to find by $id, last chance
-					for(var i = 0; i < this[relatedName].length; i ++){
-						if(this[relatedName].$id && this[relatedName].$id == oldEntity.$id){
-							index = i;
-							break;
-						}
-					}
-				}
+				
+				var index = _.findIndex(this[relatedName], function(entity){
+				  if (entity === oldEntity) {
+				    // Same object
+				    return true;
+				  } else if (entity.id && oldEntity.id && entity.id == oldEntity.id) {
+				    // Standard says all entities have a unique attribute id (assuming they are the same type)
+				    return true
+				  } else if (entity.$id && oldEntity.$id && entity.$id == oldEntity.$id) {
+				    // Not the same objet, but a copy of the same object, for new objets that don't have an id yet
+				    return true;
+				  }
+				  return false;
+				});
 
 				if(index == -1){
 					return "model not found";
