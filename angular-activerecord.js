@@ -791,7 +791,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 				  if (entity === oldEntity) {
 				    // Same object
 				    return true;
-				  } else if (entity.id && oldEntity.id && entity.id == oldEntity.id) {
+				  } else if (entity[entity.$idAttribute] && oldEntity[entity.$idAttribute] && entity[entity.$idAttribute] == oldEntity[entity.$idAttribute]) {
 				    // Standard says all entities have a unique attribute id (assuming they are the same type)
 				    return true
 				  } else if (entity.$id && oldEntity.$id && entity.$id == oldEntity.$id) {
