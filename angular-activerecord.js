@@ -460,7 +460,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 				var keyName = Related.prototype.$plural || Related.prototype.$name || assocObj.options.through;
 				var parentManaged = !!assocObj.options.parentManaged;
 				
-				if(parentManaged){
+				if (parentManaged) {
 				  // Modifications will be sent as a delta of the parent object and managed directly. No need to make any other calls
 				  return;
 				}
