@@ -239,11 +239,13 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					if (angular.isArray(value)) {
 						angular.forEach(value, function(v) {
 							var assocModel = new AssocModel();
+							v = assocModel.$parse(v);
 							assocModel.$computeData(v);
 							model[lowerCamelCaseKey].push(assocModel);
 						});
 					} else {
 						var assocModel = new AssocModel();
+						value = assocModel.$parse(value);
 						assocModel.$computeData(value);
 						model[lowerCamelCaseKey] = assocModel;
 					}
@@ -349,10 +351,15 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 						}
 					}
 					var emptyError = true;
-					angular.forEach(props, function(prop) {
+					if (mthis.$validations[fieldName].indexErrors) errors = {};
+					angular.forEach(props, function(prop, index) {
 						if (notEmptyValidation === false || notEmptyValidation.indexOf(prop) === -1) {
 							emptyError = false;
-							errors = mthis.$applyValidation(fieldName, prop, errors);
+							if (mthis.$validations[fieldName].indexErrors) {
+								errors[index] = mthis.$applyValidation(fieldName, prop, []);
+							} else {
+								errors = mthis.$applyValidation(fieldName, prop, errors);
+							}
 						}
 					});
 					if (emptyError && this.$validations[fieldName].notEmpty) {
@@ -371,7 +378,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					errors.push(errMessage);
 				}
 			}
-			if (errors.length) {
+			if (_.size(errors)) {
 				this.$errors[fieldName] = errors;
 			}
 			return this.$isValid(fieldName);
