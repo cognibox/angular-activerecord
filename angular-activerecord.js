@@ -378,7 +378,8 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					errors.push(errMessage);
 				}
 			}
-			if (_.size(errors)) {
+			var errorArray = angular.isArray(errors) ? errors : Object.keys(errors);
+			if (errorArray.length) {
 				this.$errors[fieldName] = errors;
 			}
 			return this.$isValid(fieldName);
