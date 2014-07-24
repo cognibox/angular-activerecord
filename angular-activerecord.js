@@ -357,7 +357,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 							emptyError = false;
 							if (mthis.$validations[fieldName].indexErrors) {
 								var err = mthis.$applyValidation(fieldName, prop, []);
-								if (err.length)	errors[index] = mthis.$applyValidation(fieldName, prop, []);
+								if (err.length)	errors[index] = err;
 							} else {
 								errors = mthis.$applyValidation(fieldName, prop, errors);
 							}
