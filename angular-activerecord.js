@@ -91,8 +91,9 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					applyFilters(_result(this, '$readFilters'), properties);
 				}
 				angular.extend(this, properties);
+				var data = angular.copy(properties);
 				this.$previousAttributes = function () {
-					return properties;
+					return data;
 				};
 			}
 			if (options.url) {
