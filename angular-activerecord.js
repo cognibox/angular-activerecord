@@ -101,6 +101,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			if (options.urlRoot) {
 				this.$urlRoot = options.urlRoot;
 			}
+			this.$errors = {};
 		},
 
 		$hasAttributes: function(attrs) {
@@ -289,8 +290,6 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 		$validations: {},
 
 		$fieldTranslations: {},
-
-		$errors: {},
 
 		$isValid: function(fieldName) {
 			var valid = false;
