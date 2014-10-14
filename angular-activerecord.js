@@ -340,7 +340,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			delete this.$errors[fieldName];
 			if (this.$validations[fieldName]) {
 				var mthis = this;
-				if (mthis.hasOwnProperty(fieldName)) {
+				if (mthis.hasOwnProperty(fieldName) && mthis[fieldName] !== null) {
 					var props = typeof mthis[fieldName] == "object" && !angular.isDate(mthis[fieldName]) ? mthis[fieldName] : [mthis[fieldName]];
 					var notEmptyValidation = false;
 					if (mthis.$validations[fieldName].notEmpty) {
