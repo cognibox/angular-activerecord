@@ -165,7 +165,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			var previousAttributes = this.$previousAttributes();
 			if (!diff) { // Skip removed properties (only compare the properties in the diff object)
 				for (var property in previousAttributes) {
-					if (typeof current[property] === 'undefined') {
+					if (typeof current[property] === 'undefined' && typeof previousAttributes[property] !== 'undefined') {
 						changed[property] = current[property];
 					}
 				}
