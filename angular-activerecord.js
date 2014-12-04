@@ -102,6 +102,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			if (options.urlRoot) {
 				this.$urlRoot = options.urlRoot;
 			}
+
 			this.$errors = {};
 		},
 
@@ -218,7 +219,13 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 				var assocName = null;
 				var module = null;
 				angular.forEach(model.$associations, function(valueAssoc, keyAssoc) {
-					var Assoc = $injector.get(keyAssoc);
+					var Assoc = null;
+					if ($injector.has(keyAssoc)) {
+						Assoc = $injector.get(keyAssoc);
+					} else if (valueAssoc.options.model && $injector.has(valueAssoc.options.model)) {
+						Assoc = $injector.get(valueAssoc.options.model);
+					}
+
 					if (lowerCaseKey == keyAssoc.toLowerCase()) {
 						assocName = keyAssoc;
 					} else if (lowerCaseKey == Assoc.prototype.$plural.toLowerCase()) {
@@ -231,6 +238,9 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 							module = valueAssoc.options.through;
 							assocName = relName;
 						}
+					}
+					if (valueAssoc.options.model) {
+						module = valueAssoc.options.model;
 					}
 				});
 				if (assocName) {
@@ -468,7 +478,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 				var Related = $injector.get(assocObj.options.through || assocKey);
 				var keyName = Related.prototype.$plural || Related.prototype.$name || assocObj.options.through;
 				var parentManaged = !!assocObj.options.parentManaged;
-				
+
 				if (parentManaged) {
 				  // Modifications will be sent as a delta of the parent object and managed directly. No need to make any other calls
 				  return;
@@ -796,7 +806,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 				}
 				if (!this[relatedName]) this[relatedName] = [];
 				if (!this[relatedName + "ToRemove"]) this[relatedName + "ToRemove"] = [];
-				
+
 				var index = _.findIndex(this[relatedName], function(entity){
 				  if (entity === oldEntity) {
 				    // Same object
@@ -825,6 +835,16 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 		if (!options) options = {};
 		if ($injector.has(entity)) {
 			var name = _lcfirst(entity);
+			this.prototype.$associations[entity] = {type: "belongsTo", options: options};
+			this.prototype["add" + entity] = function(model) {
+				if (model.$isNew()) return "can't be new";
+				var relatedKey = this.$associations[entity].options.key;
+				this[name] = model;
+				this[relatedKey] = model[model.$idAttribute];
+				return model;
+			};
+		} else if (options.model && $injector.has(options.model)) {
+			var name = _lcfirst(options.model);
 			this.prototype.$associations[entity] = {type: "belongsTo", options: options};
 			this.prototype["add" + entity] = function(model) {
 				if (model.$isNew()) return "can't be new";
