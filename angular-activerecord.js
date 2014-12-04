@@ -91,8 +91,9 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					applyFilters(_result(this, '$readFilters'), properties);
 				}
 				angular.extend(this, properties);
+				var data = angular.copy(properties);
 				this.$previousAttributes = function () {
-					return properties;
+					return data;
 				};
 			}
 			if (options.url) {
@@ -101,6 +102,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			if (options.urlRoot) {
 				this.$urlRoot = options.urlRoot;
 			}
+			this.$errors = {};
 		},
 
 		$hasAttributes: function(attrs) {
@@ -163,7 +165,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			var previousAttributes = this.$previousAttributes();
 			if (!diff) { // Skip removed properties (only compare the properties in the diff object)
 				for (var property in previousAttributes) {
-					if (typeof current[property] === 'undefined') {
+					if (typeof current[property] === 'undefined' && typeof previousAttributes[property] !== 'undefined') {
 						changed[property] = current[property];
 					}
 				}
@@ -239,11 +241,13 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					if (angular.isArray(value)) {
 						angular.forEach(value, function(v) {
 							var assocModel = new AssocModel();
+							v = assocModel.$parse(v);
 							assocModel.$computeData(v);
 							model[lowerCamelCaseKey].push(assocModel);
 						});
 					} else {
 						var assocModel = new AssocModel();
+						value = assocModel.$parse(value);
 						assocModel.$computeData(value);
 						model[lowerCamelCaseKey] = assocModel;
 					}
@@ -290,8 +294,6 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 
 		$fieldTranslations: {},
 
-		$errors: {},
-
 		$isValid: function(fieldName) {
 			var valid = false;
 			if (Object.keys(this.$errors).length === 0) {
@@ -305,8 +307,8 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 		$getErrorMessage: function(fieldName, functionName) {
 			var validationValue = this.$validations[fieldName][functionName];
 			var fieldValue = this[fieldName];
-			var errorMessage = this.$validationErrorMessages[functionName] || "is invalid";
-			if (angular.isFunction(errorMessage)) errorMessage = errorMessage(fieldName, fieldValue, validationValue);
+			var errorMessage = this.$validationErrorMessages.hasOwnProperty(functionName) ? this.$validationErrorMessages[functionName] : "is invalid";
+			if (angular.isFunction(errorMessage)) errorMessage = errorMessage(fieldName, fieldValue, validationValue, this);
 			if (typeof sprintf !== "undefined") {
 				if(!errorMessage.errorMessage){
 					errorMessage = sprintf(errorMessage, {fieldName: this.$fieldTranslations[fieldName] || fieldName, fieldValue: fieldValue, validationValue: validationValue});
@@ -338,8 +340,8 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 			delete this.$errors[fieldName];
 			if (this.$validations[fieldName]) {
 				var mthis = this;
-				if (mthis.hasOwnProperty(fieldName)) {
-					var props = typeof mthis[fieldName] == "object" ? mthis[fieldName] : [mthis[fieldName]];
+				if (mthis.hasOwnProperty(fieldName) && mthis[fieldName] !== null) {
+					var props = typeof mthis[fieldName] == "object" && !angular.isDate(mthis[fieldName]) ? mthis[fieldName] : [mthis[fieldName]];
 					var notEmptyValidation = false;
 					if (mthis.$validations[fieldName].notEmpty) {
 						if (mthis.$validations[fieldName].notEmpty !== true) {
@@ -349,10 +351,16 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 						}
 					}
 					var emptyError = true;
-					angular.forEach(props, function(prop) {
+					if (mthis.$validations[fieldName].indexErrors) errors = {};
+					angular.forEach(props, function(prop, index) {
 						if (notEmptyValidation === false || notEmptyValidation.indexOf(prop) === -1) {
 							emptyError = false;
-							errors = mthis.$applyValidation(fieldName, prop, errors);
+							if (mthis.$validations[fieldName].indexErrors) {
+								var err = mthis.$applyValidation(fieldName, prop, []);
+								if (err.length)	errors[index] = err;
+							} else {
+								errors = mthis.$applyValidation(fieldName, prop, errors);
+							}
 						}
 					});
 					if (emptyError && this.$validations[fieldName].notEmpty) {
@@ -371,7 +379,8 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					errors.push(errMessage);
 				}
 			}
-			if (errors.length) {
+			var errorArray = angular.isArray(errors) ? errors : Object.keys(errors);
+			if (errorArray.length) {
 				this.$errors[fieldName] = errors;
 			}
 			return this.$isValid(fieldName);
@@ -577,6 +586,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 					model.$previousAttributes = function () {
 						return data;
 					};
+					model.$computeData(data);
 				}
 				if (!model.$saveHasManyAssociations(deferred)) deferred.resolve(model);
 			}).catch(function(err) {
