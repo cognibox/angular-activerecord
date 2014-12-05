@@ -833,18 +833,9 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 
 	ActiveRecord.belongsTo = function(entity, options) {
 		if (!options) options = {};
-		if ($injector.has(entity)) {
+
+		if ($injector.has(entity) || (options.model && $injector.has(options.model))) {
 			var name = _lcfirst(entity);
-			this.prototype.$associations[entity] = {type: "belongsTo", options: options};
-			this.prototype["add" + entity] = function(model) {
-				if (model.$isNew()) return "can't be new";
-				var relatedKey = this.$associations[entity].options.key;
-				this[name] = model;
-				this[relatedKey] = model[model.$idAttribute];
-				return model;
-			};
-		} else if (options.model && $injector.has(options.model)) {
-			var name = _lcfirst(options.model);
 			this.prototype.$associations[entity] = {type: "belongsTo", options: options};
 			this.prototype["add" + entity] = function(model) {
 				if (model.$isNew()) return "can't be new";
