@@ -211,6 +211,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 		},
 
 		$computeData: function(data) {
+			var mthis = this;
 			data = data || this;
 			var model = this;
 			angular.forEach(data, function(value, key) {
@@ -220,27 +221,29 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 				var module = null;
 				angular.forEach(model.$associations, function(valueAssoc, keyAssoc) {
 					var Assoc = null;
-					if ($injector.has(keyAssoc)) {
-						Assoc = $injector.get(keyAssoc);
-					} else if (valueAssoc.options.model && $injector.has(valueAssoc.options.model)) {
-						Assoc = $injector.get(valueAssoc.options.model);
-					}
-
-					if (lowerCaseKey == keyAssoc.toLowerCase()) {
-						assocName = keyAssoc;
-					} else if (lowerCaseKey == Assoc.prototype.$plural.toLowerCase()) {
-						assocName = Assoc.prototype.$plural;
-						module = keyAssoc;
-					} else if (valueAssoc.options.through) {
-						var Related = $injector.get(valueAssoc.options.through);
-						var relName = Related.prototype.$plural || Related.prototype.$name || valueAssoc.options.through;
-						if (lowerCaseKey == relName.toLowerCase()) {
-							module = valueAssoc.options.through;
-							assocName = relName;
+					if (!assocName) {
+						if ($injector.has(keyAssoc)) {
+							Assoc = $injector.get(keyAssoc);
+						} else if (valueAssoc.options.model && $injector.has(valueAssoc.options.model)) {
+							Assoc = $injector.get(valueAssoc.options.model);
 						}
-					}
-					if (valueAssoc.options.model) {
-						module = valueAssoc.options.model;
+
+						if (lowerCaseKey == keyAssoc.toLowerCase()) {
+							assocName = keyAssoc;
+						} else if (lowerCaseKey == Assoc.prototype.$plural.toLowerCase()) {
+							assocName = Assoc.prototype.$plural;
+							module = keyAssoc;
+						} else if (valueAssoc.options.through) {
+							var Related = $injector.get(valueAssoc.options.through);
+							var relName = Related.prototype.$plural || Related.prototype.$name || valueAssoc.options.through;
+							if (lowerCaseKey == relName.toLowerCase()) {
+								module = valueAssoc.options.through;
+								assocName = relName;
+							}
+						}
+						if (valueAssoc.options.model && assocName) {
+							module = valueAssoc.options.model;
+						}
 					}
 				});
 				if (assocName) {
@@ -836,7 +839,7 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 
 		if ($injector.has(entity) || (options.model && $injector.has(options.model))) {
 			var name = _lcfirst(entity);
-			this.prototype.$associations[entity] = {type: "belongsTo", options: options};
+			this.prototype.$associations[entity] = {type: "belongsTo", options: angular.copy(options)};
 			this.prototype["add" + entity] = function(model) {
 				if (model.$isNew()) return "can't be new";
 				var relatedKey = this.$associations[entity].options.key;
