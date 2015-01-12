@@ -211,7 +211,6 @@ angular.module('ActiveRecord', []).factory('ActiveRecord', ['$http', '$q', '$par
 		},
 
 		$computeData: function(data) {
-			var mthis = this;
 			data = data || this;
 			var model = this;
 			angular.forEach(data, function(value, key) {
